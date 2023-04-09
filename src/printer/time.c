@@ -22,15 +22,6 @@ void sb_print_timespec(printer *pr, void *buf, size_t size)
     IMPL_SB_PRINT_BIT_TYPE(timespec, pr, buf, size);
 }
 
-       ssize_t write(int fd, const void *buf, size_t count);
-#define fold_to_enum_print_case(n_) case n_ : write(2, #n_, sizeof(#n_)); string_buffer_strcat(sb, #n_); break;
-#define sb_print_enum_type(value_,...) do { \
-    switch (value_) { \
-FOLD_CALLS_ADD_PAREN(fold_to_enum_print_case, __VA_ARGS__) \
-    default: string_buffer_hex(sb, value_); break; \
-    } \
-} while (0)
-
 #define define_enum_table_elem(n_) {n_, #n_}
 const enum_table enum_table_clockid[] = {
     define_enum_table_elem(CLOCK_REALTIME),
