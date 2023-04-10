@@ -304,8 +304,16 @@ static int print_any_type(printer *pr, bit_reg_t value, int print_type)
     case SYSCALL_PRINT_PTR2STR_NULL_DELIM_R: peek_sb_print_length_null_delim_str(pr, value, nrsi_argR(pr->si)); break;
     case SYSCALL_PRINT_PTR2PIPE_F: peek_sb_print_bit_number_array(pr, value, 2, sint, dec); break;
     case SYSCALL_PRINT_PTR2OFF_T_F: peek_sb_print_bit_number(pr, value, off_t, dec); break;
-    case SYSCALL_PRINT_PTR2IOVEC_3 : peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si) * bit_sizeof(pr, iovec), iovec, bit_sizeof(pr, iovec)); break;
-    case SYSCALL_PRINT_PTR2IOVEC_3_R : peek_sb_print_callback(pr, value, nrsi_arg3(pr->si) * bit_sizeof(pr, iovec), iovec_array_sized_argR); break;
+    case SYSCALL_PRINT_PTR2IOVEC_3 :
+            pr->data = (void*)(uintptr_t)SIZE_MAX;
+            peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si) * bit_sizeof(pr, iovec), iovec, bit_sizeof(pr, iovec));
+            pr->data = NULL;
+            break;
+    case SYSCALL_PRINT_PTR2IOVEC_3_R :
+            pr->data = (void*)(uintptr_t)nrsi_argR(pr->si);
+            peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si) * bit_sizeof(pr, iovec), iovec, bit_sizeof(pr, iovec));
+            pr->data = NULL;
+            break;
     case SYSCALL_PRINT_PTR2MSGHDR : peek_sb_print_callback(pr, value, bit_sizeof(pr, msghdr), msghdr); break;
     case SYSCALL_PRINT_SOCKETCALL_NAME : sb_print_callback(pr, value, socketcall_name); break;
     case SYSCALL_PRINT_SOCKETCALL_ARG : sb_print_callback(pr, value, socketcall_arg); break;
