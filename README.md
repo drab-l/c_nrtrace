@@ -17,11 +17,12 @@ Option:
 
 libc以外のライブラリには依存していない。
 libcはstatic linkするので、最終生成物1ファイルのみで動作する。
-Android(bionic libc)など、glic以外にも対応しているはず。
+Android(bionic libc)など、glibc以外のlibcにも対応しているはず。
 ただし、ptraceの都合上、Linux 5.3以降必須。
 
 PTRACE_GET_SYSCALL_INFO を PTRACE_GETREGS に変更すれば Linux 3.4以降に緩和。
 この場合、syscallのin/outがわからなくなるので、syscallの番号の変化で検知する。
+つまり、同じsyscallを呼び続けるプロセスを途中からtraceし始めた場合は、in/outを確定するのが難しい。
 戻り値がエラーかどうかは、-1 ～ -4095の範囲内か否かで判定する。
 アーキテクチャによっては第1引数と戻り値を同じレジスタに格納するため、syscallのout時に参照するように引数はin時に保存しておく。
 32bit/64bitの判定は PTRACE_GETREGS で読みだしたバッファサイズで判定する。
