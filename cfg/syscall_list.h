@@ -17,7 +17,9 @@ bdflush
 bind
 bpf
 break
+breakpoint
 brk
+cacheflush
 capget
 capset
 chdir
@@ -104,6 +106,7 @@ get_kernel_syms
 get_mempolicy
 get_robust_list
 get_thread_area
+get_tls
 getcpu
 getcwd
 getdents
@@ -340,6 +343,7 @@ set_mempolicy
 set_robust_list
 set_thread_area
 set_tid_address
+set_tls
 setdomainname
 setfsgid
 setfsgid32
@@ -439,6 +443,8 @@ unlinkat
 unshare
 uselib
 userfaultfd
+usr26
+usr32
 ustat
 utime
 utimensat
