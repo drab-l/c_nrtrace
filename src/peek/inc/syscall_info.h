@@ -43,6 +43,8 @@ void nrsi_set_arg5(syscall_info_t *d, bit_reg_t n);
 void nrsi_set_arg6(syscall_info_t *d, bit_reg_t n);
 void nrsi_set_args(syscall_info_t *p, const bit_reg_t n[static 6]);
 
+uint32_t nrsi_errno(const syscall_info_t *p);
+
 int32_t nrsi_pid(const syscall_info_t *p);
 void nrsi_set_pid(syscall_info_t *p, int32_t pid);
 

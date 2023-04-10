@@ -31,6 +31,7 @@ const enum_table enum_table_clockid[] = {
     define_enum_table_elem(CLOCK_MONOTONIC_RAW),
     define_enum_table_elem(CLOCK_BOOTTIME),
     define_enum_table_elem(CLOCK_PROCESS_CPUTIME_ID),
-    define_enum_table_elem(CLOCK_THREAD_CPUTIME_ID)
+    define_enum_table_elem(CLOCK_THREAD_CPUTIME_ID),
+    define_enum_table_elem_sentinel()
 };
 

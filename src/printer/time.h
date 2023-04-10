@@ -15,4 +15,3 @@ typedef struct { bit32_time_t tv_sec; bit32_slong tv_nsec; } bit32_timespec;
 
 void sb_print_timespec(printer *pr, void *buf, size_t size);
 
-#define enum_table_clockid_size 8

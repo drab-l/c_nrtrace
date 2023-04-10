@@ -48,6 +48,9 @@ void nrsi_set_arg5(syscall_info_t *p, bit_reg_t n) { p->args[4] = n; }
 void nrsi_set_arg6(syscall_info_t *p, bit_reg_t n) { p->args[5] = n; }
 void nrsi_set_args(syscall_info_t *p, const bit_reg_t n[static 6]) { memcpy(p->args, n, sizeof(p->args)); }
 
+uint32_t nrsi_errno(const syscall_info_t *p) {
+    return nrsi_is_error(p) ? (-p->ret & 0xFFF) : 0;
+}
 int32_t nrsi_pid(const syscall_info_t *p) { return p->pid; }
 void nrsi_set_pid(syscall_info_t *p, int32_t pid) { p->pid = pid; }
 

@@ -41,4 +41,6 @@ void printer_peek_sb_print_graph_ascii_or_hex(printer *pr, bit_reg_t value, size
 void printer_sb_print_syscall_out_args(printer *pr);
 void printer_sb_print_syscall_args(printer *pr);
 
+#define define_enum_table_elem(n_) {n_, #n_}
+#define define_enum_table_elem_sentinel(n_) {0, NULL}
 typedef struct { bit_reg_t num; const char *name; } enum_table;

@@ -178,9 +178,9 @@ static void peek_sb_print_length_null_delim_str(printer *pr, bit_reg_t value, si
     }
 }
 
-static void sb_print_enum(printer *pr, bit_reg_t value, const enum_table *table, size_t len)
+static void sb_print_enum(printer *pr, bit_reg_t value, const enum_table *table)
 {
-    for (size_t i = 0; i < len; i++) {
+    for (size_t i = 0; table[i].name != NULL; i++) {
         if (table[i].num == value) {
             string_buffer_strcat(pr->sb, table[i].name);
             return;
@@ -190,8 +190,8 @@ static void sb_print_enum(printer *pr, bit_reg_t value, const enum_table *table,
 }
 
 #define sb_print_enum(pr_, value_, cb_) do { \
-    extern const enum_table enum_table_##cb_[enum_table_##cb_##_size]; \
-    sb_print_enum(pr_, value_, enum_table_##cb_, enum_table_##cb_##_size); \
+    extern const enum_table enum_table_##cb_[]; \
+    sb_print_enum(pr_, value_, enum_table_##cb_); \
 } while (0)
 
 #define sb_print_callback(pr_, value_, cb_) do { \
@@ -415,10 +415,10 @@ static void print_syscall_out_args(printer *pr)
 static void print_syscall_ret(printer *pr)
 {
     print_syscall_header_ommit_args(pr);
-    bit_reg_t ret = nrsi_argR(pr->si);
-    if (ret >= (bit_reg_t)-4096) {
-        sb_print_number(pr, (int)ret, dec);
+    if (nrsi_is_error(pr->si)) {
+         sb_print_enum(pr, nrsi_errno(pr->si), errno);
     } else {
+        bit_reg_t ret = nrsi_argR(pr->si);
         print_any_type(pr, ret, get_ret_print_type(pr));
         print_syscall_out_args(pr);
     }
