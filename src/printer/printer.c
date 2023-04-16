@@ -116,6 +116,10 @@ static void sb_print_graph_ascii_or_hex(printer *pr, void *buf, size_t size)
             string_buffer_hexcat(pr->sb, buf, size);
             return;
         }
+        if (*c == 0 && (ptrdiff_t)(c - b) < (ptrdiff_t)size) {
+            string_buffer_hexcat(pr->sb, buf, size);
+            return;
+        }
     }
     string_buffer_asciicat(pr->sb, buf, size);
 }
@@ -201,58 +205,6 @@ static void sb_print_enum(printer *pr, bit_reg_t value, const enum_table *table)
 
 typedef void sb_print_buf_func(printer*, void*, size_t);
 
-#define peek_sb_print_callback(pr_, value_, len_, cb_) do { \
-    _Alignas(_Alignof(uint64_t)) unsigned char PSPSC_buf[4096]; \
-    size_t PSPSC_max = sizeof(PSPSC_buf) < (size_t)(len_) ? sizeof(PSPSC_buf) : len_; \
-    PSPSC_max -= peek_data(PSPSC_buf, PSPSC_max, nrsi_pid(pr_->si), value_); \
-    string_buffer_strcat(pr_->sb, "{"); \
-    void sb_print_##cb_(printer*, void*, size_t); \
-    sb_print_##cb_(pr_, PSPSC_buf, PSPSC_max); \
-    string_buffer_strcat(pr_->sb, "}"); \
-} while (0)
-
-#define peek_sb_print_array_callback(pr_, value_, len_, cb_) do { \
-    void sb_print_##cb_(printer*, void*, size_t); \
-    void sb_print_array_prefix_##cb_(printer*); \
-    void sb_print_array_suffix_##cb_(printer*); \
-    void sb_print_elem_delim_##cb_(printer*); \
-    size_t sb_print_elem_size_##cb_(printer*, void*, size_t); \
-    _Alignas(_Alignof(uint64_t)) unsigned char PSPAC_buf[4096]; \
-    size_t PSPAC_max = sizeof(PSPAC_buf) < (size_t)(len_) ? sizeof(PSPAC_buf) : len_; \
-    PSPAC_max -= peek_data(PSPAC_buf, PSPAC_max, nrsi_pid(pr_->si), value_); \
-    string_buffer_strcat(pr_->sb, "{"); \
-    sb_print_array_prefix_##cb_(pr_); \
-    size_t PSPAC_i = 0; \
-    while (PSPAC_i < PSPAC_max) { \
-        if (PSPAC_i) { sb_print_elem_delim_##cb_(pr_);} \
-        string_buffer_strcat(pr_->sb, "{"); \
-        sb_print_##cb_(pr_, &PSPAC_buf[PSPAC_i], PSPAC_max - PSPAC_i); \
-        PSPAC_i += sb_print_elem_size_##cb_(pr_, &PSPAC_buf[PSPAC_i], PSPAC_max - PSPAC_i); \
-        string_buffer_strcat(pr_->sb, "}"); \
-    } \
-    sb_print_array_suffix_##cb_(pr_); \
-    string_buffer_strcat(pr_->sb, "}"); \
-} while (0)
-
-#define peek_sb_print_array_callback_default(pr_, value_, len_, cb_, elemsize_) do { \
-    void sb_print_##cb_(printer*, void*, size_t); \
-    _Alignas(_Alignof(uint64_t)) unsigned char PSPAC_buf[4096]; \
-    size_t PSPAC_max = sizeof(PSPAC_buf) < (size_t)(len_) ? sizeof(PSPAC_buf) : len_; \
-    PSPAC_max -= peek_data(PSPAC_buf, PSPAC_max, nrsi_pid(pr_->si), value_); \
-    string_buffer_strcat(pr_->sb, "{"); \
-    sb_print_array_prefix_default(pr_); \
-    size_t PSPAC_i = 0; \
-    while (PSPAC_i < PSPAC_max) { \
-        if (PSPAC_i) { sb_print_elem_delim_default(pr_);} \
-        string_buffer_strcat(pr_->sb, "{"); \
-        sb_print_##cb_(pr_, &PSPAC_buf[PSPAC_i], PSPAC_max - PSPAC_i); \
-        PSPAC_i += elemsize_; \
-        string_buffer_strcat(pr_->sb, "}"); \
-    } \
-    sb_print_array_suffix_default(pr_); \
-    string_buffer_strcat(pr_->sb, "}"); \
-} while (0)
-
 #define declarate_sb_si(pr_) typeof(pr->sb) sb = pr->sb; typeof(pr->si) si = pr->si
 static int print_any_type(printer *pr, bit_reg_t value, int print_type)
 {
@@ -292,8 +244,8 @@ static int print_any_type(printer *pr, bit_reg_t value, int print_type)
     case SYSCALL_PRINT_PTR2RLIMIT64_F : peek_sb_print_callback(pr, value, sizeof(struct rlimit64), rlimit64); break;
     case SYSCALL_PRINT_PTR2TIMESPEC_F : peek_sb_print_callback(pr, value, bit_sizeof(pr, timespec), timespec); break;
     case SYSCALL_PRINT_PTR2EPOLL_EVENT_F : peek_sb_print_callback(pr, value, bit_sizeof(pr, epoll_event), epoll_event); break;
-    case SYSCALL_PRINT_PTR2EPOLL_WAIT_EVENT_V : peek_sb_print_array_callback_default(pr, value, nrsi_argR(pr->si) * bit_sizeof(pr, epoll_event), epoll_event, bit_sizeof(pr, epoll_event)); break;
-    case SYSCALL_PRINT_PTR2PPOLL_POLLFD_V : peek_sb_print_array_callback_default(pr, value, nrsi_argR(pr->si) * bit_sizeof(pr, pollfd), pollfd, bit_sizeof(pr, pollfd)); break;
+    case SYSCALL_PRINT_PTR2EPOLL_WAIT_EVENT_V : peek_sb_print_array_callback_default(pr, value, nrsi_argR(pr->si), epoll_event, bit_sizeof(pr, epoll_event)); break;
+    case SYSCALL_PRINT_PTR2PPOLL_POLLFD_V : peek_sb_print_array_callback_default(pr, value, nrsi_argR(pr->si), pollfd, bit_sizeof(pr, pollfd)); break;
     case SYSCALL_PRINT_PTR2SOCKADDR_3 : peek_sb_print_callback(pr, value, nrsi_arg3(pr->si), sockaddr); break;
     case SYSCALL_PRINT_PTR2SOCKADDR_6 : peek_sb_print_callback(pr, value, nrsi_arg6(pr->si), sockaddr); break;
     case SYSCALL_PRINT_PTR2SOCKADDR_PEEK3 : peek_sb_print_callback(pr, value, peek_bit_number(pr, nrsi_arg3(pr->si), socklen_t), sockaddr); break;
@@ -306,15 +258,19 @@ static int print_any_type(printer *pr, bit_reg_t value, int print_type)
     case SYSCALL_PRINT_PTR2OFF_T_F: peek_sb_print_bit_number(pr, value, off_t, dec); break;
     case SYSCALL_PRINT_PTR2IOVEC_3 :
             pr->data = (void*)(uintptr_t)SIZE_MAX;
-            peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si) * bit_sizeof(pr, iovec), iovec, bit_sizeof(pr, iovec));
+            peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si), iovec, bit_sizeof(pr, iovec));
             pr->data = NULL;
             break;
     case SYSCALL_PRINT_PTR2IOVEC_3_R :
             pr->data = (void*)(uintptr_t)nrsi_argR(pr->si);
-            peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si) * bit_sizeof(pr, iovec), iovec, bit_sizeof(pr, iovec));
+            peek_sb_print_array_callback_default(pr, value, nrsi_arg3(pr->si), iovec, bit_sizeof(pr, iovec));
             pr->data = NULL;
             break;
-    case SYSCALL_PRINT_PTR2MSGHDR : peek_sb_print_callback(pr, value, bit_sizeof(pr, msghdr), msghdr); break;
+    case SYSCALL_PRINT_PTR2MSGHDR :
+            pr->data = (void*)(uintptr_t)nrsi_argR(pr->si);
+            peek_sb_print_callback(pr, value, bit_sizeof(pr, msghdr), msghdr);
+            pr->data = NULL;
+            break;
     case SYSCALL_PRINT_SOCKETCALL_NAME : sb_print_callback(pr, value, socketcall_name); break;
     case SYSCALL_PRINT_SOCKETCALL_ARG : sb_print_callback(pr, value, socketcall_arg); break;
     case SYSCALL_PRINT_CLOCK_ID : sb_print_enum(pr, value, clockid); break;

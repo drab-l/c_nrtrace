@@ -44,3 +44,55 @@ void printer_sb_print_syscall_args(printer *pr);
 #define define_enum_table_elem(n_) {n_, #n_}
 #define define_enum_table_elem_sentinel(n_) {0, NULL}
 typedef struct { bit_reg_t num; const char *name; } enum_table;
+
+#define peek_sb_print_callback(pr_, value_, len_, cb_) do { \
+    _Alignas(_Alignof(uint64_t)) unsigned char PSPSC_buf[4096]; \
+    size_t PSPSC_max = sizeof(PSPSC_buf) < (size_t)(len_) ? sizeof(PSPSC_buf) : len_; \
+    PSPSC_max -= peek_data(PSPSC_buf, PSPSC_max, nrsi_pid(pr_->si), value_); \
+    string_buffer_strcat(pr_->sb, "{"); \
+    void sb_print_##cb_(printer*, void*, size_t); \
+    sb_print_##cb_(pr_, PSPSC_buf, PSPSC_max); \
+    string_buffer_strcat(pr_->sb, "}"); \
+} while (0)
+
+#define peek_sb_print_array_callback(pr_, value_, len_, cb_) do { \
+    void sb_print_##cb_(printer*, void*, size_t); \
+    void sb_print_array_prefix_##cb_(printer*); \
+    void sb_print_array_suffix_##cb_(printer*); \
+    void sb_print_elem_delim_##cb_(printer*); \
+    size_t sb_print_elem_size_##cb_(printer*, void*, size_t); \
+    _Alignas(_Alignof(uint64_t)) unsigned char PSPAC_buf[4096]; \
+    size_t PSPAC_max = sizeof(PSPAC_buf) < (size_t)(len_) ? sizeof(PSPAC_buf) : len_; \
+    PSPAC_max -= peek_data(PSPAC_buf, PSPAC_max, nrsi_pid(pr_->si), value_); \
+    string_buffer_strcat(pr_->sb, "{"); \
+    sb_print_array_prefix_##cb_(pr_); \
+    size_t PSPAC_i = 0; \
+    while (PSPAC_i < PSPAC_max) { \
+        if (PSPAC_i) { sb_print_elem_delim_##cb_(pr_);} \
+        string_buffer_strcat(pr_->sb, "{"); \
+        sb_print_##cb_(pr_, &PSPAC_buf[PSPAC_i], PSPAC_max - PSPAC_i); \
+        PSPAC_i += sb_print_elem_size_##cb_(pr_, &PSPAC_buf[PSPAC_i], PSPAC_max - PSPAC_i); \
+        string_buffer_strcat(pr_->sb, "}"); \
+    } \
+    sb_print_array_suffix_##cb_(pr_); \
+    string_buffer_strcat(pr_->sb, "}"); \
+} while (0)
+
+#define peek_sb_print_array_callback_default(pr_, value_, elemcnt_, cb_, elemsize_) do { \
+    void sb_print_##cb_(printer*, void*, size_t); \
+    _Alignas(_Alignof(uint64_t)) unsigned char PSPAC_buf[4096]; \
+    size_t PSPAC_max = sizeof(PSPAC_buf) < (size_t)(elemcnt_ * elemsize_) ? sizeof(PSPAC_buf) : (elemcnt_ * elemsize_); \
+    PSPAC_max -= peek_data(PSPAC_buf, PSPAC_max, nrsi_pid(pr_->si), value_); \
+    string_buffer_strcat(pr_->sb, "{"); \
+    sb_print_array_prefix_default(pr_); \
+    size_t PSPAC_i = 0; \
+    while (PSPAC_i < PSPAC_max) { \
+        if (PSPAC_i) { sb_print_elem_delim_default(pr_);} \
+        string_buffer_strcat(pr_->sb, "{"); \
+        sb_print_##cb_(pr_, &PSPAC_buf[PSPAC_i], PSPAC_max - PSPAC_i); \
+        PSPAC_i += elemsize_; \
+        string_buffer_strcat(pr_->sb, "}"); \
+    } \
+    sb_print_array_suffix_default(pr_); \
+    string_buffer_strcat(pr_->sb, "}"); \
+} while (0)
