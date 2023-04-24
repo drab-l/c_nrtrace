@@ -93,6 +93,11 @@ static pid_t attach_running_proc(pid_t pid)
     return pid;
 }
 
+static void interrupt_proc(pid_t pid)
+{
+    ptrace(PTRACE_INTERRUPT, pid, NULL, NULL);
+}
+
 static void cont_listen_proc(pid_t pid)
 {
     ptrace(PTRACE_LISTEN, pid, NULL, NULL);
@@ -209,7 +214,9 @@ void peek_cont_proc(pid_t pid)
 
 pid_t peek_attach_running_proc(pid_t pid)
 {
-    return attach_running_proc(pid);
+    attach_running_proc(pid);
+    interrupt_proc(pid);
+    return pid;
 }
 
 int peek_syscall_info(syscall_info_t *si, pid_t pid)

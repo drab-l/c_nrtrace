@@ -197,9 +197,6 @@ void tracer_start()
 void tracer_attach_running_proc(pid_t pid)
 {
     peek_attach_running_proc(pid);
-    if (print_syscall_and_cont(pid)) {
-        exit(EXIT_FAILURE);
-    }
 }
 
 void tracer_set_no_print()
